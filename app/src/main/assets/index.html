@@ -231,13 +231,15 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 
     <footer>
       <div class="acts">
+        <button class="btn" id="btnsummary" type="button">Copy summary</button>
         <button class="btn" id="btnexport" type="button">Copy backup</button>
         <button class="btn" id="btnimport" type="button">Restore backup</button>
         <button class="btn danger" id="btnclear" type="button">Clear this session</button>
       </div>
       <p class="foot">
         Everything is saved on this phone as you type &mdash; no account, no signal needed.
-        Back up now and then &mdash; it copies your whole log to the clipboard to paste somewhere safe. Clearing your browser&rsquo;s site data wipes it.
+        <b>Copy summary</b> gives you a readable rundown of every set you&rsquo;ve logged &mdash; paste it into a chat when you want the block reviewed.
+        <b>Copy backup</b> copies the raw data instead, which is what <b>Restore backup</b> reads. Back up now and then: clearing app data wipes the log.
         <br>Week&nbsp;4 adds a set to the first two exercises automatically. Week&nbsp;5 drops everything to 2 sets with no techniques.
       </p>
     </footer>
@@ -626,6 +628,68 @@ $("#btnclear").addEventListener("click",()=>{
   if(!Object.keys(b.sets).length && !b.notes){ toast("Nothing logged here yet"); return; }
   if(!confirm("Clear all sets and notes for Week "+week+", "+DAYS[day].full+"?")) return;
   b.sets={}; b.notes=""; save(); renderAll(); toast("Session cleared");
+});
+
+/* ---------- readable summary, for review ---------- */
+function buildSummary(){
+  const b = db.blocks[BLOCK_ID] || {};
+  const out = [];
+  for(let w=1; w<=5; w++){
+    const wk = [];
+    DAYS.forEach((d,di)=>{
+      const rec = b["w"+w+"d"+di];
+      if(!rec) return;
+      const body = [];
+      d.ex.forEach((ex,ei)=>{
+        const n = setsFor(ex,w);
+        const parts = [];
+        for(let si=0; si<n; si++){
+          const r = rec.sets[ei+"_"+si];
+          if(!r) continue;
+          if(!r.kg && !r.reps && !r.done) continue;
+          parts.push((r.kg||"?") + " x " + (r.reps||"?") + (r.done ? "" : " [not ticked]"));
+        }
+        if(parts.length){
+          const tag = tagFor(ex,w);
+          body.push("  " + (ei+1) + ". " + ex.n + "  (" + n + " x " + ex.reps + (tag ? ", " + tag : "") + ")");
+          body.push("     " + parts.join("  |  "));
+        }
+      });
+      const note = (rec.notes||"").trim();
+      if(body.length || note){
+        wk.push("");
+        wk.push(" DAY " + (di+1) + " - " + d.full);
+        wk.push.apply(wk, body);
+        if(note) wk.push("     Notes: " + note);
+      }
+    });
+    if(wk.length){
+      out.push("");
+      out.push("=== WEEK " + w + " ===");
+      out.push.apply(out, wk);
+    }
+  }
+  if(!out.length) return null;
+  return ["BLOCK 2 - CLASSIC SPLIT - TRAINING LOG",
+          "Exported " + new Date().toISOString().slice(0,10),
+          "Format: load x reps, in set order"].concat(out).join("\n");
+}
+
+$("#btnsummary").addEventListener("click", async ()=>{
+  const text = buildSummary();
+  if(!text){ toast("Nothing logged yet"); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+    toast("Summary copied - paste it anywhere");
+  }catch(e){
+    sheetMode = "export";
+    sheetTitle.textContent = "Your training log";
+    sheetMsg.textContent = "Select all of this and copy it.";
+    sheetText.value = text;
+    sheetOk.textContent = "Copy";
+    sheet.dataset.show = "1";
+    setTimeout(()=>{ sheetText.focus(); sheetText.select(); }, 40);
+  }
 });
 
 /* ---------- installable shell ---------- */
