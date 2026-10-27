@@ -10,8 +10,10 @@ android {
         applicationId = "com.hussein.blocklogger"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // Bumped for Block 3. Installs over the top of the Block 2 build
+        // and keeps every set you have already logged.
+        versionCode = 2
+        versionName = "3.0"
     }
 
     buildTypes {
