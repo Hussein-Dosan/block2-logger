@@ -11,13 +11,14 @@ import android.webkit.WebViewClient;
 /**
  * A single full-screen WebView showing the logger from app assets.
  *
- * Two settings matter more than the rest:
+ * Four settings matter more than the rest:
  *   domStorageEnabled  - the entire training log lives in localStorage.
  *                        Without this the app silently forgets everything.
  *   useWideViewPort=false + loadWithOverviewMode=false
  *                      - forces the WebView to lay out at the real device
- *                        width instead of a fake 980px desktop viewport,
- *                        which is what made the page look zoomed out.
+ *                        width instead of a fake 980px desktop viewport.
+ *   textZoom(100)      - ignores the system font-size slider, which
+ *                        otherwise breaks the set-row layout.
  */
 public class MainActivity extends Activity {
 
