@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Block 2 Logger</title>
+<title>Block 3 Logger</title>
 </head>
 <body>
 <style>
@@ -82,11 +82,11 @@ header{
 .brand span{color:var(--accent)}
 .sub{color:var(--text-faint);font-size:11.5px;letter-spacing:.9px;text-transform:uppercase;font-weight:600}
 
-.weeks{display:flex;gap:6px;margin-top:10px}
+.weeks{display:flex;gap:5px;margin-top:10px}
 .wk{
   flex:1;appearance:none;border:1px solid var(--line);background:var(--surface);
   color:var(--text-dim);border-radius:8px;padding:7px 0;cursor:pointer;
-  font-family:"Barlow Condensed","Roboto Condensed",sans-serif-condensed,sans-serif;font-weight:600;font-size:15px;letter-spacing:.6px;
+  font-family:"Barlow Condensed","Roboto Condensed",sans-serif-condensed,sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.4px;
 }
 .wk[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .wknote{
@@ -99,7 +99,7 @@ header{
   color:var(--text-dim);border-radius:8px;padding:8px 2px 6px;cursor:pointer;text-align:center;
 }
 .day[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2);color:var(--text)}
-.day b{display:block;font-family:"Barlow Condensed","Roboto Condensed",sans-serif-condensed,sans-serif;font-size:14px;letter-spacing:.5px;text-transform:uppercase;font-weight:600;line-height:1.15}
+.day b{display:block;font-family:"Barlow Condensed","Roboto Condensed",sans-serif-condensed,sans-serif;font-size:13.5px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;line-height:1.15}
 .day .bar{height:3px;border-radius:2px;background:var(--line);margin-top:5px;overflow:hidden}
 .day .bar i{display:block;height:100%;background:var(--accent);width:0}
 .day[data-complete="1"] .bar i{background:var(--done)}
@@ -135,8 +135,11 @@ header{
 .exbody{padding:0 13px 13px;border-top:1px solid var(--line-soft)}
 .cue{font-size:13px;color:var(--text-dim);margin:11px 0 0;line-height:1.5}
 .cue b{color:var(--text);font-weight:600}
+.cue .tech{font-size:10px}
 .fallback{font-size:12.5px;color:var(--text-faint);margin:6px 0 0}
 .fallback b{color:var(--text-dim);font-weight:600}
+.tech{display:inline-block;padding:0 4px;border-radius:3px;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);letter-spacing:.4px}
 
 /* ---------- set rows ---------- */
 .sets{display:flex;flex-direction:column;gap:7px;margin-top:12px}
@@ -213,8 +216,8 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 <div class="wrap">
   <header>
     <div class="brandrow">
-      <h1 class="brand">Block <span>2</span></h1>
-      <div class="sub" id="daylabel">Classic Split</div>
+      <h1 class="brand">Block <span>3</span></h1>
+      <div class="sub" id="daylabel">Back &amp; Delts</div>
     </div>
     <div class="weeks" id="weeks" role="group" aria-label="Week"></div>
     <p class="wknote" id="wknote"></p>
@@ -238,9 +241,9 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
       </div>
       <p class="foot">
         Everything is saved on this phone as you type &mdash; no account, no signal needed.
-        <b>Copy summary</b> gives you a readable rundown of every set you&rsquo;ve logged &mdash; paste it into a chat when you want the block reviewed.
+        <b>Copy summary</b> gives you a readable rundown of every set you&rsquo;ve logged, Block&nbsp;2 included &mdash; paste it into a chat when you want the block reviewed.
         <b>Copy backup</b> copies the raw data instead, which is what <b>Restore backup</b> reads. Back up now and then: clearing app data wipes the log.
-        <br>Week&nbsp;4 adds a set to the first two exercises automatically. Week&nbsp;5 drops everything to 2 sets with no techniques.
+        <br><b>DL</b> is the deload week &mdash; start there. Week&nbsp;4 adds a set to the first two exercises automatically; Week&nbsp;5 drops everything to 2 sets with no techniques.
       </p>
     </footer>
   </main>
@@ -264,110 +267,124 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
    Logs are keyed by BLOCK_ID, so changing the id preserves old
    logs rather than overwriting them.
    ============================================================ */
-const BLOCK_ID = "block2";
+const BLOCK_ID = "block3";
+
+/* Older blocks: exercise names only, so Copy summary can still render
+   logs you recorded under a previous block id. */
+const ARCHIVE = {
+  block2: { label:"BLOCK 2 - CLASSIC SPLIT", days:[
+    { full:"Chest + Triceps", ex:["Decline barbell bench press","Flat dumbbell bench press","Incline dumbbell press - 30°","Cable fly or pec deck","Overhead cable or DB triceps extension","Rope pushdown","Rope face pull"] },
+    { full:"Back + Biceps", ex:["Neutral-grip pull-up, weighted","Chest-supported row","Neutral-grip lat pulldown","Seated cable row, neutral grip","Straight-arm pulldown or DB pullover","Hammer curl","Incline neutral-grip DB curl"] },
+    { full:"Legs + Core", ex:["Squat - hack, safety bar or DB box","Leg press - constant tension","DB Bulgarian split squat","DB Romanian deadlift","Seated leg curl","Leg extension - partial range","Calves & core block"] },
+    { full:"Shoulders + Arms", ex:["Seated neutral-grip DB shoulder press","DB lateral raise","Cable lateral raise, one arm","Reverse pec deck or rear-delt fly","Rope face pull","Rope cable hammer curl","Rope pushdown or overhead extension","Elbow eccentrics"] }
+  ]}
+};
+
+const WEEK_LABELS = ["DL","W1","W2","W3","W4","W5"];
 
 const WEEK_NOTES = [
-  "Week 1 — establish loads at the new rep ranges. All techniques on. Log everything.",
-  "Week 2 — add 1–2 reps everywhere, or 2.5–5% load where you're at the top of the range.",
-  "Week 3 — lengthened partials come in on every exercise marked LP.",
-  "Week 4 — peak. An extra set on the first two exercises of each day, already counted below.",
-  "Week 5 — deload and test. Two sets per exercise, no techniques, about 80% of Week 4 loads."
+  "Deload - 2 sets per exercise, no failure techniques, ~70% of your Block 2 loads. Every set stops 3-4 reps short. Not optional: you finished Block 2 tired.",
+  "Week 1 - establish loads at the new rep ranges. All techniques on. Log everything, including the tape measurements.",
+  "Week 2 - add 1-2 reps everywhere, or 2.5-5% load where you're already at the top of the range.",
+  "Week 3 - lengthened partials come in on every exercise marked LP. After failure, keep going with partials in the stretched half only.",
+  "Week 4 - peak. An extra set on the first two exercises of each day, already counted below. Double drops where marked.",
+  "Week 5 - deload and test. Two sets per exercise, no techniques, ~80% of Week 4 loads. Test triples on decline bench, squat and the weighted pull-up."
 ];
 
 const DAYS = [
-  { name:"Chest + Tri", full:"Chest + Triceps", ex:[
-    { n:"Decline barbell bench press", sets:4, reps:"6–8", tag:"AM", w4:true, unit:"kg",
-      cue:"3 s down, touch, drive. Final set is an AMRAP — stop at <b>RPE 9, one rep in reserve</b>. Never grind this one.",
-      alt:"Decline DB press → flat DB press with a slow eccentric" },
-    { n:"Flat dumbbell bench press", sets:3, reps:"8–10", tag:"RP", w4:true, unit:"kg",
-      cue:"Stop at chest level, elbows 45–60°. Rest the dumbbells on your thighs between rest-pause bursts.",
-      alt:"Machine chest press → decline DB press" },
-    { n:"Incline dumbbell press — 30°", sets:3, reps:"10–12", tag:"FAIL", unit:"kg",
-      cue:"Low incline keeps the front of the shoulder out of trouble. Last set to failure.",
-      alt:"Incline machine press → adjustable bench at its lowest incline" },
-    { n:"Cable fly or pec deck", sets:3, reps:"12–15", tag:"DS·LP", unit:"kg",
-      cue:"Soft elbows at a locked angle, stop the stretch at chest line. From Week 3, after the drop set fails, keep going with <b>partials in the stretched half only</b>.",
-      alt:"DB fly on a flat bench, light and controlled" },
-    { n:"Overhead cable or DB triceps extension", sets:3, reps:"12–15", tag:"LP", unit:"kg",
-      cue:"Overhead is the stretched position for the long head — the part pushdowns barely touch. Rope or neutral grip, elbows narrow.",
-      alt:"Seated single-arm overhead DB extension" },
-    { n:"Rope pushdown", sets:2, reps:"15–20", tag:"DS", unit:"kg",
-      cue:"Elbows pinned to the ribs, spread the rope at the bottom. No skullcrushers, ever.",
-      alt:"Single-arm cable pushdown" },
-    { n:"Rope face pull", sets:2, reps:"15", tag:"", unit:"kg",
-      cue:"To the forehead, thumbs back, 1 s pause. After thirteen sets of pressing this is not optional.",
-      alt:"Band pull-apart → prone rear-delt raise" }
-  ]},
-  { name:"Back + Bi", full:"Back + Biceps", ex:[
-    { n:"Neutral-grip pull-up, weighted", sets:4, reps:"6–10", tag:"FAIL", w4:true, unit:"kg add",
-      cue:"Once you get 10 clean, add a dumbbell between the feet or a belt. Last set to true failure — bodyweight failure is free.",
-      alt:"Neutral-grip lat pulldown → DB pullover" },
-    { n:"Chest-supported row", sets:4, reps:"8–10", tag:"RP", w4:true, unit:"kg",
-      cue:"Straps on. Chest stays on the pad, elbows drive to the hips. The support means your lower back contributes nothing, so you can fail honestly.",
-      alt:"Machine row (neutral) → single-arm DB row" },
-    { n:"Neutral-grip lat pulldown", sets:3, reps:"10–12", tag:"MR", unit:"kg",
-      cue:"Let the shoulder blade rise fully at the top — that stretch is where the lat grows. Never behind the neck.",
+  { name:"Back + Rear", full:"Back (heavy) + Rear Delts", ex:[
+    { n:"Weighted neutral-grip pull-up", sets:4, reps:"5-8", tag:"RPE 9", w4:true, unit:"kg add",
+      cue:"Straps on. Add load once you get 8 clean. Heavy and low-rep - this is the <b>strength anchor</b> for your back, so keep a rep in reserve.",
+      alt:"Heavy neutral-grip lat pulldown &rarr; assisted pull-up machine" },
+    { n:"Chest-supported row - heavy", sets:4, reps:"8-10", tag:"RP", w4:true, unit:"kg",
+      cue:"Chest stays on the pad, so your lower back contributes nothing - which is exactly why you can take this to real failure. Elbows drive to the hips.",
+      alt:"Machine row (neutral) &rarr; single-arm DB row" },
+    { n:"Neutral-grip lat pulldown", sets:3, reps:"10-12", tag:"MR", unit:"kg",
+      cue:"Let the shoulder blade rise fully at the top - that stretch is where lat <b>width</b> comes from. Never behind the neck.",
       alt:"Single-arm cable pulldown, kneeling" },
-    { n:"Seated cable row, neutral grip", sets:3, reps:"12–15", tag:"FAIL", unit:"kg",
+    { n:"Seated cable row", sets:2, reps:"12-15", tag:"FAIL", unit:"kg",
       cue:"Full stretch at the front without letting the shoulder roll forward. Squeeze, don't lean.",
-      alt:"Single-arm DB row → chest-supported DB row on a 30° bench" },
-    { n:"Straight-arm pulldown or DB pullover", sets:2, reps:"15", tag:"LP", unit:"kg",
-      cue:"Pure lat isolation with the elbow out of the equation entirely — which is exactly why it's here with your tendons.",
-      alt:"Drop this first if you're running past 60 minutes" },
-    { n:"Hammer curl", sets:3, reps:"10–12", tag:"DS", unit:"kg",
-      cue:"Neutral grip throughout. Trains brachialis and brachioradialis as much as biceps — what actually thickens an arm, and far kinder to the medial elbow.",
-      alt:"Rope cable hammer curl" },
-    { n:"Incline neutral-grip DB curl", sets:2, reps:"12–15", tag:"LP", unit:"kg",
-      cue:"Bench at 45°, arms hanging behind the torso — the biceps at its <b>longest</b>. Grip stays neutral, not supinated.",
-      alt:"Cable curl from a low pulley, standing a step forward" }
-  ]},
-  { name:"Legs + Core", full:"Legs + Core", ex:[
-    { n:"Squat — hack, safety bar or DB box", sets:4, reps:"8–10", tag:"RPE 9", w4:true, unit:"kg",
-      cue:"<b>3 s down, 1 s pause at the bottom, drive up.</b> The pause kills the bounce and makes a moderate load feel heavy. Still to parallel. Never failure.",
-      alt:"Heel-elevated goblet squat → DB Bulgarian split squat" },
-    { n:"Leg press — constant tension", sets:3, reps:"15–20", tag:"RP", w4:true, unit:"kg",
-      cue:"<b>Never lock out</b> — stop 15° short at the top, and stop the descent before the hips tuck. Safest place in the gym to fail, so fail properly.",
-      alt:"DB Bulgarian split squat → heel-elevated goblet squat" },
-    { n:"DB Bulgarian split squat", sets:3, reps:"12–15 / leg", tag:"FAIL", unit:"kg",
-      cue:"One leg carries everything, so half the dumbbell gets twice the effort. Second leg to genuine failure — you can step out of it safely.",
-      alt:"Nothing — two dumbbells and a bench" },
-    { n:"DB Romanian deadlift", sets:3, reps:"10–12", tag:"RPE 8", unit:"kg",
-      cue:"Straps on. 3 s eccentric, soft knees, hinge back. <b>Never to failure.</b> With hamstrings down to 6 sets a week, these three have to count.",
-      alt:"45° back extension holding a plate" },
-    { n:"Seated leg curl", sets:3, reps:"12–15", tag:"DS·LP", unit:"kg",
-      cue:"3 s lowering every rep. Seated beats lying — hip flexion puts the hamstring at a longer length, and long is where it grows.",
-      alt:"Lying leg curl → slow Nordic curl" },
-    { n:"Leg extension — partial range", sets:2, reps:"15–20", tag:"DS", unit:"kg",
-      cue:"Start deep (~90°), stop <b>20° short of lockout</b>. Last set 1½ reps to failure, then drop and repeat. If the knee complains, narrow to 90°–45° before cutting it.",
-      alt:"Sissy squat is NOT a substitute here — skip instead" },
-    { n:"Calves &amp; core block", sets:6, reps:"see cue", tag:"DS", unit:"kg",
-      cue:"Continuous, 45 s rest. Standing calf raise <b>2 × 15–20</b> with a drop · Pallof press <b>2 × 12</b>/side · cable crunch or hanging knee raise <b>2 × 15</b>.",
-      alt:"All three work on a mat with a band" }
-  ]},
-  { name:"Delts + Arms", full:"Shoulders + Arms", ex:[
-    { n:"Seated neutral-grip DB shoulder press", sets:4, reps:"8–10", tag:"RPE 9", w4:true, unit:"kg",
-      cue:"Palms facing, bench at 80–85°. <b>RPE 9 ceiling — this lift never goes to failure</b>, fed or not.",
-      alt:"Half-kneeling landmine press → standing neutral DB press" },
-    { n:"DB lateral raise", sets:4, reps:"12–15", tag:"DS×2·LP", w4:true, unit:"kg",
-      cue:"Thumbs slightly up, <b>stop level with the shoulder, never higher</b>. Double drop on the last set. From Week 3, partials from the bottom after it fails.",
-      alt:"Cable lateral raise → machine lateral raise" },
-    { n:"Cable lateral raise, one arm", sets:3, reps:"15–20", tag:"LP", unit:"kg",
-      cue:"The cable keeps tension on at the bottom where a dumbbell has none — which is why this earns a slot rather than duplicating the one above.",
-      alt:"Machine lateral raise → leaning DB lateral raise" },
-    { n:"Reverse pec deck or rear-delt fly", sets:3, reps:"15–20", tag:"DS", unit:"kg",
-      cue:"Rear delts are the half of the shoulder that keeps the joint healthy and the half nobody trains. With your history they're a priority, not a finisher.",
-      alt:"Prone rear-delt raise on a 30° bench → cable reverse fly" },
+      alt:"Chest-supported DB row on a 30&deg; bench" },
+    { n:"Straight-arm pulldown", sets:2, reps:"15", tag:"LP", unit:"kg",
+      cue:"Pure lat work with the elbow out of the equation entirely - which is why it stays while those tendons finish healing.",
+      alt:"DB pullover lying across a bench" },
+    { n:"Reverse pec deck", sets:3, reps:"15-20", tag:"DS", unit:"kg",
+      cue:"Rear delts three times a week this block. They're half the shoulder, and the half that keeps the joint healthy.",
+      alt:"Prone rear-delt raise on a 30&deg; bench &rarr; cable reverse fly" },
     { n:"Rope face pull", sets:2, reps:"15", tag:"", unit:"kg",
-      cue:"To the forehead, thumbs back, 1 s pause. Third appearance this week. Still not optional.",
-      alt:"Band pull-apart → prone Y-raise" },
-    { n:"Rope cable hammer curl", sets:2, reps:"15–20", tag:"DS", unit:"kg",
-      cue:"Light, high rep, constant tension. <b>Cables, not dumbbells</b> — smoother loading is easier on the medial tendon than a dumbbell's spike at the bottom.",
-      alt:"Cut this first if either elbow starts complaining" },
-    { n:"Rope pushdown or overhead extension", sets:2, reps:"15–20", tag:"DS", unit:"kg",
-      cue:"Same brief: light, high rep, pure blood flow. Not a strength set.",
-      alt:"Cut this second if either elbow starts complaining" },
-    { n:"Elbow eccentrics", sets:3, reps:"15 each way", tag:"", unit:"kg",
-      cue:"Eccentric wrist extension and flexion, 4 s lowering. Plus the other four days at home. It's working — that's exactly why you don't stop.",
+      cue:"To the forehead, thumbs back, 1 s pause.",
+      alt:"Band pull-apart" }
+  ]},
+
+  { name:"Chest + Delts", full:"Chest (strength) + Shoulders", ex:[
+    { n:"Decline barbell bench press", sets:3, reps:"6-8", tag:"RPE 9", w4:true, unit:"kg",
+      cue:"Your <b>strength anchor</b>, and it goes first while you're fresh. 3 s down, touch, drive. Never past RPE 9 - a failed rep lands on your chest.",
+      alt:"Decline DB press &rarr; flat DB press with a slow eccentric" },
+    { n:"Seated neutral-grip DB press", sets:4, reps:"8-10", tag:"RPE 9", w4:true, unit:"kg",
+      cue:"Palms facing, bench at 80-85&deg;. <b>RPE 9 ceiling, always</b> - this lift never goes to failure, fed or not.",
+      alt:"Half-kneeling landmine press &rarr; standing neutral DB press" },
+    { n:"Incline dumbbell press - 30&deg;", sets:3, reps:"10-12", tag:"RP", unit:"kg",
+      cue:"Low incline keeps the front of the shoulder out of trouble. Stop at chest level.",
+      alt:"Incline machine press" },
+    { n:"DB lateral raise", sets:4, reps:"12-15", tag:"DS×2", unit:"kg",
+      cue:"Thumbs slightly up, <b>stop level with the shoulder, never higher</b>. Double drop on the last set. <span class='tech n'>LP</span> from Week 3 - partials from the bottom.",
+      alt:"Machine lateral raise" },
+    { n:"Cable lateral raise - one arm", sets:3, reps:"15-20", tag:"LP", unit:"kg",
+      cue:"The cable holds tension at the bottom where a dumbbell has none. That's why it earns a slot rather than duplicating the one above.",
+      alt:"Leaning single-arm DB lateral raise" },
+    { n:"Cable fly", sets:2, reps:"12-15", tag:"DS", unit:"kg",
+      cue:"Soft elbows at a locked angle, stop the stretch at chest line. Chest is on <b>maintenance</b> this block - hold it, don't chase it.",
+      alt:"DB fly on a flat bench, light and controlled" }
+  ]},
+
+  { name:"Legs + Core", full:"Legs + Core", ex:[
+    { n:"Squat - hack, safety bar or DB box", sets:3, reps:"8-10", tag:"RPE 9", w4:true, unit:"kg",
+      cue:"<b>3 s down, 1 s pause at the bottom, drive up.</b> The pause makes a moderate load feel heavy. Still to parallel. Never failure.",
+      alt:"Heel-elevated goblet squat &rarr; DB Bulgarian split squat" },
+    { n:"Leg press - constant tension", sets:3, reps:"15-20", tag:"RP", w4:true, unit:"kg",
+      cue:"<b>Never lock out</b> - stop 15&deg; short at the top, and stop the descent before the hips tuck.",
+      alt:"DB Bulgarian split squat &rarr; heel-elevated goblet squat" },
+    { n:"DB Bulgarian split squat", sets:3, reps:"12-15 / leg", tag:"FAIL", unit:"kg",
+      cue:"Half the dumbbell, twice the effort. Second leg to genuine failure - you can step out of it safely.",
+      alt:"Nothing needed - two dumbbells and a bench" },
+    { n:"DB Romanian deadlift", sets:3, reps:"10-12", tag:"RPE 8", unit:"kg",
+      cue:"Straps on, 3 s eccentric, soft knees. <b>Never to failure.</b> Hamstrings sit at 6 sets a week, so these three have to count.",
+      alt:"45&deg; back extension holding a plate" },
+    { n:"Seated leg curl", sets:3, reps:"12-15", tag:"DS", unit:"kg",
+      cue:"3 s lowering every rep. Seated beats lying - hip flexion puts the hamstring at a longer length, and long is where it grows.",
+      alt:"Lying leg curl &rarr; slow Nordic curl" },
+    { n:"Leg extension - partial range", sets:2, reps:"15-20", tag:"DS", unit:"kg",
+      cue:"Start deep (~90&deg;), stop <b>20&deg; short of lockout</b>. If the knee complains, narrow the range to 90-45&deg; before you cut the exercise.",
+      alt:"Skip rather than substitute" },
+    { n:"Calves and core - continuous, 45 s rest", sets:4, reps:"see cue", tag:"DS", unit:"kg",
+      cue:"Standing calf raise <b>2 &times; 15-20</b> with a drop &middot; Pallof press <b>2 &times; 12</b>/side. About five minutes.",
+      alt:"Both work on a mat with a band" }
+  ]},
+
+  { name:"Back + Delts", full:"Back & Shoulders (volume) + Arms", ex:[
+    { n:"Chest-supported or machine row", sets:4, reps:"12-15", tag:"MR", w4:true, unit:"kg",
+      cue:"Second back session of the week - this is the one that makes the block work. Higher reps than Day 1 on purpose: <b>volume, not strength</b>.",
+      alt:"Single-arm DB row &rarr; chest-supported DB row on a 30&deg; bench" },
+    { n:"Wide neutral-grip pulldown", sets:3, reps:"12-15", tag:"LP", w4:true, unit:"kg",
+      cue:"Wider than Day 1 to bias the upper lat. Let the shoulder blade rise fully at the top.",
+      alt:"Lat pulldown with a V-handle" },
+    { n:"DB pullover", sets:2, reps:"15", tag:"LP", unit:"kg",
+      cue:"Lying across a bench, 3 s into the stretch. More elbow-free lat work.",
+      alt:"Straight-arm cable pulldown" },
+    { n:"Cable lateral raise", sets:3, reps:"15-20", tag:"DS", unit:"kg",
+      cue:"Third lateral session of the week. Side delts recover fast and respond to frequency - <b>this is where the width comes from</b>.",
+      alt:"DB lateral raise &rarr; machine lateral raise" },
+    { n:"Reverse pec deck", sets:3, reps:"15-20", tag:"DS", unit:"kg",
+      cue:"Rear delts again. Light, controlled, squeeze and hold.",
+      alt:"Prone rear-delt raise on a 30&deg; bench" },
+    { n:"Hammer curl", sets:3, reps:"12-15", tag:"DS", unit:"kg",
+      cue:"Neutral grip only. Down from 7 sets a week to 3 - <b>if your arm tape drops, say so and they come straight back</b>.",
+      alt:"Rope cable hammer curl" },
+    { n:"Rope pushdown", sets:3, reps:"15-20", tag:"DS", unit:"kg",
+      cue:"Elbows pinned to the ribs. Light and high-rep while the tendons finish healing. No skullcrushers, ever.",
+      alt:"Overhead cable extension" },
+    { n:"Elbow eccentrics - do them here", sets:3, reps:"15 each way", tag:"", unit:"kg",
+      cue:"Wrist extension and flexion, 4 s lowering. Plus the other four days at home. <b>Much better is not fully healed.</b>",
       alt:"Any light dumbbell, forearm resting on your thigh" }
   ]}
 ];
@@ -377,7 +394,7 @@ const KEY = "hussein_traininglog_v1";
 const $ = (s,r)=>(r||document).querySelector(s);
 
 let db = load();
-let week = db.ui?.week ?? 1;
+let week = db.ui?.week ?? 0;
 let day  = db.ui?.day  ?? 0;
 let open = 0;
 
@@ -398,11 +415,11 @@ function bucket(w,d){
   return b[k];
 }
 function setsFor(ex, w){
-  if(w===5) return 2;
+  if(w===0 || w===5) return 2;                 // deload weeks, both ends
   return ex.sets + (w===4 && ex.w4 ? 1 : 0);
 }
 function tagFor(ex, w){
-  if(w===5) return "";
+  if(w===0 || w===5) return "";                // no techniques on a deload
   if(w<3) return (ex.tag||"").replace(/·?LP/,"").replace(/^·/,"");
   return ex.tag||"";
 }
@@ -416,15 +433,15 @@ function toast(msg){
 function renderHeader(){
   const wk=$("#weeks");
   if(!wk.children.length){
-    for(let w=1;w<=5;w++){
+    for(let w=0;w<WEEK_LABELS.length;w++){
       const b=document.createElement("button");
-      b.type="button"; b.className="wk"; b.id="wk"+w; b.textContent="W"+w;
+      b.type="button"; b.className="wk"; b.id="wk"+w; b.textContent=WEEK_LABELS[w];
       b.addEventListener("click",()=>{week=w;open=0;save();renderAll()});
       wk.appendChild(b);
     }
   }
-  [...wk.children].forEach((b,i)=>b.setAttribute("aria-pressed", String(i+1===week)));
-  $("#wknote").textContent = WEEK_NOTES[week-1];
+  [...wk.children].forEach((b,i)=>b.setAttribute("aria-pressed", String(i===week)));
+  $("#wknote").textContent = WEEK_NOTES[week];
 
   const dy=$("#days");
   if(!dy.children.length){
@@ -458,7 +475,7 @@ function progress(w,d){
 function renderSession(){
   const list=$("#exlist"); list.innerHTML="";
   const b=bucket(week,day);
-  const prevB = week>1 ? bucket(week-1,day) : null;
+  const prevB = week>0 ? bucket(week-1,day) : null;
 
   DAYS[day].ex.forEach((ex,ei)=>{
     const n=setsFor(ex,week);
@@ -556,7 +573,7 @@ function renderSession(){
 
         if(prev?.kg || prev?.reps){
           const p=document.createElement("div"); p.className="prev";
-          p.textContent = "Week "+(week-1)+": "+(prev.kg||"—")+" × "+(prev.reps||"—");
+          p.textContent = (week===1 ? "Deload" : "Week "+(week-1)) + ": " + (prev.kg||"—") + " × " + (prev.reps||"—");
           sets.appendChild(p);
         }
       }
@@ -619,22 +636,28 @@ sheetOk.addEventListener("click",async()=>{
   try{ d=JSON.parse(sheetText.value.trim()); }
   catch(e){ toast("That isn't valid backup data"); return; }
   if(!d || typeof d!=="object" || !d.blocks){ toast("That isn't a training backup"); return; }
-  db=d; week=db.ui?.week??1; day=db.ui?.day??0; open=0;
+  db=d; week=db.ui?.week??0; day=db.ui?.day??0; open=0;
   save(); renderAll(); closeSheet(); toast("Backup restored");
 });
 
 $("#btnclear").addEventListener("click",()=>{
   const b=bucket(week,day);
   if(!Object.keys(b.sets).length && !b.notes){ toast("Nothing logged here yet"); return; }
-  if(!confirm("Clear all sets and notes for Week "+week+", "+DAYS[day].full+"?")) return;
+  if(!confirm("Clear all sets and notes for "+WEEK_LABELS[week]+", "+DAYS[day].full+"?")) return;
   b.sets={}; b.notes=""; save(); renderAll(); toast("Session cleared");
 });
 
 /* ---------- readable summary, for review ---------- */
-function buildSummary(){
+function weekHeading(w){
+  if(w===0) return "=== DELOAD WEEK ===";
+  if(w===5) return "=== WEEK 5 (deload & test) ===";
+  return "=== WEEK " + w + " ===";
+}
+
+function summariseCurrent(){
   const b = db.blocks[BLOCK_ID] || {};
   const out = [];
-  for(let w=1; w<=5; w++){
+  for(let w=0; w<WEEK_LABELS.length; w++){
     const wk = [];
     DAYS.forEach((d,di)=>{
       const rec = b["w"+w+"d"+di];
@@ -651,7 +674,7 @@ function buildSummary(){
         }
         if(parts.length){
           const tag = tagFor(ex,w);
-          body.push("  " + (ei+1) + ". " + ex.n + "  (" + n + " x " + ex.reps + (tag ? ", " + tag : "") + ")");
+          body.push("  " + (ei+1) + ". " + ex.n.replace(/<[^>]+>/g,"") + "  (" + n + " x " + ex.reps + (tag ? ", " + tag : "") + ")");
           body.push("     " + parts.join("  |  "));
         }
       });
@@ -663,16 +686,61 @@ function buildSummary(){
         if(note) wk.push("     Notes: " + note);
       }
     });
-    if(wk.length){
-      out.push("");
-      out.push("=== WEEK " + w + " ===");
-      out.push.apply(out, wk);
-    }
+    if(wk.length){ out.push(""); out.push(weekHeading(w)); out.push.apply(out, wk); }
   }
   if(!out.length) return null;
-  return ["BLOCK 2 - CLASSIC SPLIT - TRAINING LOG",
+  return ["BLOCK 3 - BACK & SHOULDER SPECIALISATION",
           "Exported " + new Date().toISOString().slice(0,10),
           "Format: load x reps, in set order"].concat(out).join("\n");
+}
+
+/* Older blocks: rendered from stored set keys plus archived exercise names,
+   so nothing you logged in a previous block becomes unreadable. */
+function summariseArchive(key, meta){
+  const store = db.blocks[key];
+  if(!store) return null;
+  const out = [];
+  for(let w=0; w<=5; w++){
+    const wk = [];
+    meta.days.forEach((d,di)=>{
+      const rec = store["w"+w+"d"+di];
+      if(!rec) return;
+      const byEx = {};
+      Object.keys(rec.sets||{}).forEach(k=>{
+        const bits = k.split("_"), ei = +bits[0], si = +bits[1];
+        const r = rec.sets[k];
+        if(!r || (!r.kg && !r.reps && !r.done)) return;
+        (byEx[ei] = byEx[ei] || []).push([si, (r.kg||"?") + " x " + (r.reps||"?")]);
+      });
+      const body = [];
+      Object.keys(byEx).map(Number).sort((a,b)=>a-b).forEach(ei=>{
+        byEx[ei].sort((a,b)=>a[0]-b[0]);
+        body.push("  " + (ei+1) + ". " + (d.ex[ei] || ("Exercise " + (ei+1))));
+        body.push("     " + byEx[ei].map(x=>x[1]).join("  |  "));
+      });
+      const note = (rec.notes||"").trim();
+      if(body.length || note){
+        wk.push("");
+        wk.push(" DAY " + (di+1) + " - " + d.full);
+        wk.push.apply(wk, body);
+        if(note) wk.push("     Notes: " + note);
+      }
+    });
+    if(wk.length){ out.push(""); out.push(weekHeading(w)); out.push.apply(out, wk); }
+  }
+  if(!out.length) return null;
+  return [meta.label + " (archived)"].concat(out).join("\n");
+}
+
+function buildSummary(){
+  const parts = [];
+  Object.keys(ARCHIVE).forEach(k=>{
+    const t = summariseArchive(k, ARCHIVE[k]);
+    if(t) parts.push(t);
+  });
+  const cur = summariseCurrent();
+  if(cur) parts.push(cur);
+  return parts.length ? parts.join("\n\n\n") : null;
 }
 
 $("#btnsummary").addEventListener("click", async ()=>{
@@ -700,7 +768,7 @@ $("#btnsummary").addEventListener("click", async ()=>{
     '<g stroke="#e0912f" stroke-width="34" stroke-linecap="round" fill="none">'+
     '<path d="M104 196v120M160 160v192M352 160v192M408 196v120M160 256h192"/></g></svg>');
   const mf = {
-    name:"Block 2 Logger", short_name:"Block 2", start_url:".",
+    name:"Block 3 Logger", short_name:"Block 3", start_url:".",
     display:"standalone", background_color:"#14181e", theme_color:"#14181e",
     icons:[{src:icon, sizes:"512x512", type:"image/svg+xml", purpose:"any"}]
   };
