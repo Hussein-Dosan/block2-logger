@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,9 +29,25 @@ jobs:
       - name: Build the APK
         run: gradle assembleRelease --no-daemon
 
-      - name: Upload the APK
+      - name: Collect and name the APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/*.apk "out/Block3Logger-${{ github.run_number }}.apk"
+          ls -la out
+
+      - name: Publish it as a release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            out/*.apk \
+            --title "Block 3 Logger - build ${{ github.run_number }}" \
+            --notes "Tap the .apk file below on your phone to install it." \
+            --latest
+
+      - name: Also keep it as a run artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Block2Logger-apk
-          path: app/build/outputs/apk/release/*.apk
+          name: Block3Logger-apk
+          path: out/*.apk
           if-no-files-found: error
