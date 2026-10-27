@@ -1,86 +1,91 @@
-# Block 2 Logger — Android app
+# Block 3 Logger — Android app
 
-A set-by-set logger for the Block 2 classic split. One full-screen WebView over a
-self-contained HTML app in `app/src/main/assets/index.html`.
+Set-by-set logger for the Block 3 back-and-shoulder specialisation. One
+full-screen WebView over a self-contained HTML app in
+`app/src/main/assets/index.html`.
 
 **No permissions, no network, no account.** Everything you log is stored in the
 WebView's `localStorage` on the phone.
 
 ---
 
-## Build it — pick one
+## Updating from the Block 2 build
 
-### Option A · GitHub Actions (no software to install)
+Same package name and same signing key, so this installs **over the top** of the
+Block 2 app. Your Block 2 log is kept — logs are stored per block id, and
+**Copy summary** still prints the Block 2 history above the Block 3 one.
 
-If you'd rather not install Android Studio:
+Drop the whole folder into your existing repo (replacing what's there) and push.
+The workflow builds it and publishes the APK as a Release.
 
-1. Create a new **private** repository on GitHub.
-2. Upload this whole folder to it (drag and drop works — keep the folder structure).
-3. Open the **Actions** tab. The `Build APK` workflow runs automatically on push;
-   if it doesn't, click it and press **Run workflow**.
-4. When it finishes (3–5 minutes), open the run and download the
-   **Block2Logger-apk** artifact. `app-release.apk` is inside the zip.
-5. Move the APK to your phone and tap it. Android will ask you to allow installs
-   from that source once.
+---
+
+## Build it
+
+### Option A · GitHub Actions (nothing to install)
+
+1. Push these files to your repo, replacing the old ones.
+   Remember `.github/` will not upload through the browser's drag-and-drop —
+   edit `.github/workflows/build-apk.yml` in place instead, or use
+   **Add file → Create new file** and type the path.
+2. Open the **Actions** tab. The `Build APK` workflow runs on push; otherwise
+   click it and press **Run workflow**.
+3. When it is green, go to the repo's main page → **Releases** in the right
+   sidebar → newest release → download `Block3Logger-<n>.apk`.
+4. Move it to the phone and tap it.
 
 ### Option B · Android Studio
 
-1. Install Android Studio, then **File → Open** and select this folder.
-2. Let it sync. It will offer to download the Android SDK and generate the Gradle
-   wrapper — accept both.
-3. Plug your phone in with USB debugging on, and press **Run** (▶).
-   Or **Build → Build Bundle(s) / APK(s) → Build APK(s)** to get a file.
-
+**File → Open**, select this folder, let it sync, press **Run** (▶).
 The APK lands at `app/build/outputs/apk/release/app-release.apk`.
 
 ---
 
 ## Signing
 
-Release builds are signed with the **debug key** (see `app/build.gradle.kts`), so
-the APK installs with no keystore for you to manage. Two consequences worth knowing:
-
-- The debug key is generated per machine. If you build on your PC now and rebuild
-  in GitHub Actions later, the signatures won't match and Android will refuse the
-  update — uninstall the old one first.
-- It is fine for personal sideloading, and not suitable for the Play Store.
-
-For a stable key of your own, generate a keystore and replace the `signingConfig`
-line with a proper `signingConfigs.create("release") { ... }` block.
+Release builds are signed with the **debug key**, so the APK installs with no
+keystore to manage. The debug key is generated per machine: if you built the
+Block 2 APK in GitHub Actions, keep building in GitHub Actions. Switching to a
+local build produces a signature mismatch and Android will refuse the update
+until you uninstall — which would take your log with it. **Back up first if you
+ever switch** (Copy backup, paste it somewhere safe).
 
 ---
 
 ## Updating the program
 
-The training program is plain data at the top of the `<script>` in
-`app/src/main/assets/index.html`:
+Everything about the training block is plain data at the top of the `<script>`
+in `app/src/main/assets/index.html`:
 
 ```js
-const BLOCK_ID = "block2";
-const WEEK_NOTES = [ ... ];
-const DAYS = [ ... ];
+const BLOCK_ID  = "block3";
+const ARCHIVE   = { block2: { … } };   // old blocks, names only, so old logs stay readable
+const WEEK_LABELS = ["DL","W1","W2","W3","W4","W5"];
+const WEEK_NOTES  = [ … ];
+const DAYS        = [ … ];
 ```
 
-To load a new block, edit `DAYS` and `WEEK_NOTES`, then **change `BLOCK_ID`**
-(for example to `"block3"`). Logs are stored per block id, so the old block's
-history is kept rather than overwritten. Bump `versionCode` and `versionName`
-in `app/build.gradle.kts`, rebuild, and install over the top.
+For a new block: edit `DAYS` and `WEEK_NOTES`, move the outgoing block's
+exercise names into `ARCHIVE`, change `BLOCK_ID`, bump `versionCode` and
+`versionName` in `app/build.gradle.kts`, and push.
+
+**Week model:** `setsFor()` returns 2 sets for weeks 0 and 5 (the deload at each
+end), adds a set in week 4 to any exercise flagged `w4:true`, and otherwise uses
+the exercise's own `sets`. `tagFor()` hides technique badges on deload weeks and
+hides `LP` before week 3.
 
 ---
 
 ## Layout notes
 
-Three settings in `MainActivity.java` are what keep the page at the right scale —
-the same problem that made the standalone file look zoomed out in a browser:
+Three WebView settings keep the page at the right scale, and one keeps the data:
 
 | Setting | Why |
 |---|---|
 | `setUseWideViewPort(false)` | Stops the WebView pretending it's a 980px desktop screen |
 | `setLoadWithOverviewMode(false)` | Stops it zooming out to fit that fake width |
 | `setTextZoom(100)` | Ignores the system font-size slider, which otherwise breaks the row layout |
-
-And `setDomStorageEnabled(true)` is what makes the log persist at all. If you ever
-strip settings out of this file, keep that one.
+| `setDomStorageEnabled(true)` | **The log lives in localStorage.** Never remove this one |
 
 `android:windowSoftInputMode="adjustResize"` is what stops the keyboard covering
-the set you're typing into.
+the set you are typing into.
