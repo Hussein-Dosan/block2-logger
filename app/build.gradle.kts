@@ -10,18 +10,27 @@ android {
         applicationId = "com.hussein.blocklogger"
         minSdk = 26
         targetSdk = 34
-        // Bumped for Block 3. Installs over the top of the Block 2 build
-        // and keeps every set you have already logged.
-        versionCode = 2
-        versionName = "3.0"
+        versionCode = 3
+        versionName = "4.0"
+    }
+
+    signingConfigs {
+        // A fixed key committed to the repo, so every build - here, in CI, on
+        // any machine - produces an APK Android accepts as an update to the
+        // last one. The auto-generated debug key differs on every CI runner,
+        // which is what caused "App not installed".
+        create("stable") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Signed with the local debug key so `assembleRelease` produces an
-            // APK you can install straight away, with no keystore to manage.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("stable")
         }
     }
 

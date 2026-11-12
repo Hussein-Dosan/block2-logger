@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Block 3 Logger</title>
+<title>Training Logger</title>
 </head>
 <body>
 <style>
@@ -216,8 +216,8 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 <div class="wrap">
   <header>
     <div class="brandrow">
-      <h1 class="brand">Block <span>3</span></h1>
-      <div class="sub" id="daylabel">Back &amp; Delts</div>
+      <h1 class="brand" id="brandtext">Block <span>4</span></h1>
+      <div class="sub" id="daylabel">Shortcut to Size</div>
     </div>
     <div class="weeks" id="weeks" role="group" aria-label="Week"></div>
     <p class="wknote" id="wknote"></p>
@@ -235,15 +235,17 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
     <footer>
       <div class="acts">
         <button class="btn" id="btnsummary" type="button">Copy summary</button>
+        <button class="btn" id="btnprogram" type="button">Load program</button>
         <button class="btn" id="btnexport" type="button">Copy backup</button>
         <button class="btn" id="btnimport" type="button">Restore backup</button>
         <button class="btn danger" id="btnclear" type="button">Clear this session</button>
       </div>
       <p class="foot">
         Everything is saved on this phone as you type &mdash; no account, no signal needed.
-        <b>Copy summary</b> gives you a readable rundown of every set you&rsquo;ve logged, Block&nbsp;2 included &mdash; paste it into a chat when you want the block reviewed.
-        <b>Copy backup</b> copies the raw data instead, which is what <b>Restore backup</b> reads. Back up now and then: clearing app data wipes the log.
-        <br><b>DL</b> is the deload week &mdash; start there. Week&nbsp;4 adds a set to the first two exercises automatically; Week&nbsp;5 drops everything to 2 sets with no techniques.
+        <b>Copy summary</b> prints every set you&rsquo;ve logged, earlier blocks included &mdash; paste it into a chat when you want the block reviewed.
+        <b>Copy backup</b> copies the raw data, which is what <b>Restore backup</b> reads.
+        <b>Load program</b> swaps in a whole new training block from pasted text, keeping your history &mdash; no app update needed.
+        <br>Reps fall and sets rise across each four-week phase: <b>12&ndash;15, 9&ndash;11, 6&ndash;8, then heavy</b>. Weeks 5&ndash;8 repeat it with rotated accessories. Capped lifts show their RPE ceiling instead of a technique and never get one.
       </p>
     </footer>
   </main>
@@ -263,141 +265,315 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 
 <script>
 /* ============================================================
-   PROGRAM DATA — swap this block to load a new training block.
-   Logs are keyed by BLOCK_ID, so changing the id preserves old
-   logs rather than overwriting them.
+   PROGRAM DATA — Block 4, Stoppani-style Shortcut to Size,
+   adapted. Everything below can be replaced at runtime with
+   the "Load program" button; this is only the built-in default.
    ============================================================ */
-const BLOCK_ID = "block3";
 
-/* Older blocks: exercise names only, so Copy summary can still render
-   logs you recorded under a previous block id. */
 const ARCHIVE = {
   block2: { label:"BLOCK 2 - CLASSIC SPLIT", days:[
     { full:"Chest + Triceps", ex:["Decline barbell bench press","Flat dumbbell bench press","Incline dumbbell press - 30°","Cable fly or pec deck","Overhead cable or DB triceps extension","Rope pushdown","Rope face pull"] },
     { full:"Back + Biceps", ex:["Neutral-grip pull-up, weighted","Chest-supported row","Neutral-grip lat pulldown","Seated cable row, neutral grip","Straight-arm pulldown or DB pullover","Hammer curl","Incline neutral-grip DB curl"] },
     { full:"Legs + Core", ex:["Squat - hack, safety bar or DB box","Leg press - constant tension","DB Bulgarian split squat","DB Romanian deadlift","Seated leg curl","Leg extension - partial range","Calves & core block"] },
     { full:"Shoulders + Arms", ex:["Seated neutral-grip DB shoulder press","DB lateral raise","Cable lateral raise, one arm","Reverse pec deck or rear-delt fly","Rope face pull","Rope cable hammer curl","Rope pushdown or overhead extension","Elbow eccentrics"] }
+  ]},
+  block3: { label:"BLOCK 3 - BACK & SHOULDER SPECIALISATION", days:[
+    { full:"Back (heavy) + Rear Delts", ex:["Weighted neutral-grip pull-up","Chest-supported row - heavy","Neutral-grip lat pulldown","Seated cable row","Straight-arm pulldown","Reverse pec deck","Rope face pull"] },
+    { full:"Chest (strength) + Shoulders", ex:["Decline barbell bench press","Seated neutral-grip DB press","Incline dumbbell press - 30°","DB lateral raise","Cable lateral raise - one arm","Cable fly"] },
+    { full:"Legs + Core", ex:["Squat - hack, safety bar or DB box","Leg press - constant tension","DB Bulgarian split squat","DB Romanian deadlift","Seated leg curl","Leg extension - partial range","Calves and core"] },
+    { full:"Back & Shoulders (volume) + Arms", ex:["Chest-supported or machine row","Wide neutral-grip pulldown","DB pullover","Cable lateral raise","Reverse pec deck","Hammer curl","Rope pushdown","Elbow eccentrics"] }
   ]}
 };
 
-const WEEK_LABELS = ["DL","W1","W2","W3","W4","W5"];
+const BUILTIN = {
+  id: "block4",
+  title: "Block 4",
+  subtitle: "Shortcut to Size",
+  summaryTitle: "BLOCK 4 - STOPPANI-STYLE SHORTCUT TO SIZE (ADAPTED)",
 
-const WEEK_NOTES = [
-  "Deload - 2 sets per exercise, no failure techniques, ~70% of your Block 2 loads. Every set stops 3-4 reps short. Not optional: you finished Block 2 tired.",
-  "Week 1 - establish loads at the new rep ranges. All techniques on. Log everything, including the tape measurements.",
-  "Week 2 - add 1-2 reps everywhere, or 2.5-5% load where you're already at the top of the range.",
-  "Week 3 - lengthened partials come in on every exercise marked LP. After failure, keep going with partials in the stretched half only.",
-  "Week 4 - peak. An extra set on the first two exercises of each day, already counted below. Double drops where marked.",
-  "Week 5 - deload and test. Two sets per exercise, no techniques, ~80% of Week 4 loads. Test triples on decline bench, squat and the weighted pull-up."
-];
+  labels: ["W1","W2","W3","W4","W5","W6","W7","W8"],
 
-const DAYS = [
-  { name:"Back + Rear", full:"Back (heavy) + Rear Delts", ex:[
-    { n:"Weighted neutral-grip pull-up", sets:4, reps:"5-8", tag:"RPE 9", w4:true, unit:"kg add",
-      cue:"Straps on. Add load once you get 8 clean. Heavy and low-rep - this is the <b>strength anchor</b> for your back, so keep a rep in reserve.",
-      alt:"Heavy neutral-grip lat pulldown &rarr; assisted pull-up machine" },
-    { n:"Chest-supported row - heavy", sets:4, reps:"8-10", tag:"RP", w4:true, unit:"kg",
-      cue:"Chest stays on the pad, so your lower back contributes nothing - which is exactly why you can take this to real failure. Elbows drive to the hips.",
-      alt:"Machine row (neutral) &rarr; single-arm DB row" },
-    { n:"Neutral-grip lat pulldown", sets:3, reps:"10-12", tag:"MR", unit:"kg",
-      cue:"Let the shoulder blade rise fully at the top - that stretch is where lat <b>width</b> comes from. Never behind the neck.",
-      alt:"Single-arm cable pulldown, kneeling" },
-    { n:"Seated cable row", sets:2, reps:"12-15", tag:"FAIL", unit:"kg",
-      cue:"Full stretch at the front without letting the shoulder roll forward. Squeeze, don't lean.",
-      alt:"Chest-supported DB row on a 30&deg; bench" },
-    { n:"Straight-arm pulldown", sets:2, reps:"15", tag:"LP", unit:"kg",
-      cue:"Pure lat work with the elbow out of the equation entirely - which is why it stays while those tendons finish healing.",
-      alt:"DB pullover lying across a bench" },
-    { n:"Reverse pec deck", sets:3, reps:"15-20", tag:"DS", unit:"kg",
-      cue:"Rear delts three times a week this block. They're half the shoulder, and the half that keeps the joint healthy.",
-      alt:"Prone rear-delt raise on a 30&deg; bench &rarr; cable reverse fly" },
-    { n:"Rope face pull", sets:2, reps:"15", tag:"", unit:"kg",
-      cue:"To the forehead, thumbs back, 1 s pause.",
-      alt:"Band pull-apart" }
-  ]},
+  /* Stoppani's rep-range periodisation: reps fall, sets rise, across
+     each 4-week phase. Weeks 5-8 repeat the pattern with heavier loads
+     and rotated accessories. */
+  spec: [
+    { reps:"12-15", main:3, acc:2, tech:"RP" },
+    { reps:"9-11",  main:3, acc:2, tech:"RP" },
+    { reps:"6-8",   main:4, acc:3, tech:"DS" },
+    { reps:"5-6",   accReps:"3-5", main:4, acc:3, tech:"DS" },
+    { reps:"12-15", main:3, acc:2, tech:"RP" },
+    { reps:"9-11",  main:3, acc:2, tech:"RP" },
+    { reps:"6-8",   main:4, acc:3, tech:"DS" },
+    { reps:"5-6",   accReps:"3-5", main:4, acc:3, tech:"DS" }
+  ],
 
-  { name:"Chest + Delts", full:"Chest (strength) + Shoulders", ex:[
-    { n:"Decline barbell bench press", sets:3, reps:"6-8", tag:"RPE 9", w4:true, unit:"kg",
-      cue:"Your <b>strength anchor</b>, and it goes first while you're fresh. 3 s down, touch, drive. Never past RPE 9 - a failed rep lands on your chest.",
-      alt:"Decline DB press &rarr; flat DB press with a slow eccentric" },
-    { n:"Seated neutral-grip DB press", sets:4, reps:"8-10", tag:"RPE 9", w4:true, unit:"kg",
-      cue:"Palms facing, bench at 80-85&deg;. <b>RPE 9 ceiling, always</b> - this lift never goes to failure, fed or not.",
-      alt:"Half-kneeling landmine press &rarr; standing neutral DB press" },
-    { n:"Incline dumbbell press - 30&deg;", sets:3, reps:"10-12", tag:"RP", unit:"kg",
-      cue:"Low incline keeps the front of the shoulder out of trouble. Stop at chest level.",
-      alt:"Incline machine press" },
-    { n:"DB lateral raise", sets:4, reps:"12-15", tag:"DS×2", unit:"kg",
-      cue:"Thumbs slightly up, <b>stop level with the shoulder, never higher</b>. Double drop on the last set. <span class='tech n'>LP</span> from Week 3 - partials from the bottom.",
-      alt:"Machine lateral raise" },
-    { n:"Cable lateral raise - one arm", sets:3, reps:"15-20", tag:"LP", unit:"kg",
-      cue:"The cable holds tension at the bottom where a dumbbell has none. That's why it earns a slot rather than duplicating the one above.",
-      alt:"Leaning single-arm DB lateral raise" },
-    { n:"Cable fly", sets:2, reps:"12-15", tag:"DS", unit:"kg",
-      cue:"Soft elbows at a locked angle, stop the stretch at chest line. Chest is on <b>maintenance</b> this block - hold it, don't chase it.",
-      alt:"DB fly on a flat bench, light and controlled" }
-  ]},
+  notes: [
+    "Phase 1, Week 1 - 12 to 15 reps. Mains 3 sets, accessories 2. Rest-pause the last set of each main lift. Pick loads that fail inside the range.",
+    "Phase 1, Week 2 - 9 to 11 reps. Same set counts, heavier. Rest-pause still on the mains.",
+    "Phase 1, Week 3 - 6 to 8 reps. Mains go to 4 sets, accessories to 3. Drop sets replace rest-pause, on the accessories only.",
+    "Phase 1, Week 4 - heavy. 5 to 6 reps on the capped lifts at RPE 8-9; 3 to 5 on machines and cables. Drop sets on accessories.",
+    "Phase 2, Week 5 - back to 12 to 15, but heavier than Week 1 and with rotated accessories. The high-rep week is the reset; there is no separate deload.",
+    "Phase 2, Week 6 - 9 to 11 reps. Beat Week 2's loads.",
+    "Phase 2, Week 7 - 6 to 8 reps. Mains 4 sets, accessories 3, drop sets back on.",
+    "Phase 2, Week 8 - heavy and final. Same caps as Week 4. Record everything: this is the test week."
+  ],
 
-  { name:"Legs + Core", full:"Legs + Core", ex:[
-    { n:"Squat - hack, safety bar or DB box", sets:3, reps:"8-10", tag:"RPE 9", w4:true, unit:"kg",
-      cue:"<b>3 s down, 1 s pause at the bottom, drive up.</b> The pause makes a moderate load feel heavy. Still to parallel. Never failure.",
-      alt:"Heel-elevated goblet squat &rarr; DB Bulgarian split squat" },
-    { n:"Leg press - constant tension", sets:3, reps:"15-20", tag:"RP", w4:true, unit:"kg",
-      cue:"<b>Never lock out</b> - stop 15&deg; short at the top, and stop the descent before the hips tuck.",
-      alt:"DB Bulgarian split squat &rarr; heel-elevated goblet squat" },
-    { n:"DB Bulgarian split squat", sets:3, reps:"12-15 / leg", tag:"FAIL", unit:"kg",
-      cue:"Half the dumbbell, twice the effort. Second leg to genuine failure - you can step out of it safely.",
-      alt:"Nothing needed - two dumbbells and a bench" },
-    { n:"DB Romanian deadlift", sets:3, reps:"10-12", tag:"RPE 8", unit:"kg",
-      cue:"Straps on, 3 s eccentric, soft knees. <b>Never to failure.</b> Hamstrings sit at 6 sets a week, so these three have to count.",
-      alt:"45&deg; back extension holding a plate" },
-    { n:"Seated leg curl", sets:3, reps:"12-15", tag:"DS", unit:"kg",
-      cue:"3 s lowering every rep. Seated beats lying - hip flexion puts the hamstring at a longer length, and long is where it grows.",
-      alt:"Lying leg curl &rarr; slow Nordic curl" },
-    { n:"Leg extension - partial range", sets:2, reps:"15-20", tag:"DS", unit:"kg",
-      cue:"Start deep (~90&deg;), stop <b>20&deg; short of lockout</b>. If the knee complains, narrow the range to 90-45&deg; before you cut the exercise.",
-      alt:"Skip rather than substitute" },
-    { n:"Calves and core - continuous, 45 s rest", sets:4, reps:"see cue", tag:"DS", unit:"kg",
-      cue:"Standing calf raise <b>2 &times; 15-20</b> with a drop &middot; Pallof press <b>2 &times; 12</b>/side. About five minutes.",
-      alt:"Both work on a mat with a band" }
-  ]},
+  /* Two phases. Mains stay; accessories rotate at week 5, as Stoppani does. */
+  phases: [
+    [
+      { name:"Chest + Tri", full:"Chest + Triceps", ex:[
+        { n:"Decline barbell bench press", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"Your one barbell press and the strength anchor of the block. 3 s down, touch, drive. <b>Never past RPE 9</b> - no rest-pause, no drop sets, a rep always in reserve.",
+          alt:"Decline DB press &rarr; flat DB press with a slow eccentric" },
+        { n:"Incline dumbbell press - 30&deg;", role:"main", unit:"kg",
+          cue:"Low incline keeps the front of the shoulder out of trouble. Stop at chest level, elbows 45-60&deg;.",
+          alt:"Incline machine press" },
+        { n:"Flat dumbbell press", role:"acc", unit:"kg",
+          cue:"Rest the dumbbells on your thighs between rest-pause bursts.",
+          alt:"Machine chest press" },
+        { n:"Cable fly", role:"acc", unit:"kg",
+          cue:"Soft elbows at a locked angle, stop the stretch at chest line.",
+          alt:"Pec deck &rarr; DB fly, light" },
+        { n:"Overhead cable triceps extension", role:"acc", unit:"kg",
+          cue:"Overhead is the stretched position for the long head - the part pushdowns barely touch. Rope or neutral grip, elbows narrow. <b>No skullcrushers, ever.</b>",
+          alt:"Seated overhead DB extension, two hands" },
+        { n:"Rope pushdown", role:"acc", unit:"kg",
+          cue:"Elbows pinned to the ribs, spread the rope at the bottom.",
+          alt:"Single-arm cable pushdown" },
+        { n:"Rope face pull", role:"fixed", sets:2, reps:"15", unit:"kg",
+          cue:"To the forehead, thumbs back, 1 s pause. Every chest day, every week, no exceptions.",
+          alt:"Band pull-apart" }
+      ]},
+      { name:"Back + Bi", full:"Back + Biceps", ex:[
+        { n:"Weighted neutral-grip pull-up", role:"main", unit:"kg add",
+          cue:"Straps on. Add load once the top of the rep range comes easily. In the 12-15 week use bodyweight or assistance.",
+          alt:"Neutral-grip lat pulldown, heavy &rarr; assisted pull-up machine" },
+        { n:"Chest-supported row", role:"main", unit:"kg",
+          cue:"Straps on. Chest stays on the pad so your lower back contributes nothing - which is why this one can go to real failure. Elbows to the hips.",
+          alt:"Machine row (neutral) &rarr; single-arm DB row" },
+        { n:"Seated cable row - neutral grip", role:"acc", unit:"kg",
+          cue:"Full stretch at the front without letting the shoulder roll forward. Squeeze, don't lean.",
+          alt:"Single-arm DB row" },
+        { n:"Straight-arm pulldown", role:"acc", unit:"kg",
+          cue:"Pure lat work with the elbow out of the equation - which is exactly why it stays while those tendons finish healing.",
+          alt:"DB pullover across a bench" },
+        { n:"Hammer curl", role:"acc", unit:"kg",
+          cue:"Neutral grip. This replaces Stoppani's barbell curl - a straight bar on a golfer's elbow is the one thing I won't program.",
+          alt:"Rope cable hammer curl" },
+        { n:"Incline neutral-grip DB curl", role:"acc", unit:"kg",
+          cue:"Bench at 45&deg;, arms hanging behind the torso - the biceps at its longest. Grip stays neutral, not supinated.",
+          alt:"Cable curl from a low pulley, standing a step forward" }
+      ]},
+      { name:"Delts", full:"Shoulders + Traps", ex:[
+        { n:"Seated neutral-grip DB press", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"Palms facing, bench at 80-85&deg;. <b>RPE 9 ceiling all eight weeks</b> - this lift never goes to failure and never gets rest-pause.",
+          alt:"Half-kneeling landmine press &rarr; standing neutral DB press" },
+        { n:"DB lateral raise", role:"main", unit:"kg",
+          cue:"Thumbs slightly up, <b>stop level with the shoulder, never higher</b>. In the heavy weeks keep it strict - no heaving.",
+          alt:"Machine lateral raise" },
+        { n:"Cable lateral raise - one arm", role:"acc", unit:"kg",
+          cue:"The cable holds tension at the bottom where a dumbbell has none.",
+          alt:"Leaning single-arm DB lateral raise" },
+        { n:"Reverse pec deck", role:"acc", unit:"kg",
+          cue:"Rear delts. Half the shoulder, and the half that keeps the joint healthy.",
+          alt:"Prone rear-delt raise on a 30&deg; bench" },
+        { n:"DB shrug", role:"acc", unit:"kg",
+          cue:"Straps on. Straight up, 1 s squeeze at the top, no rolling.",
+          alt:"Machine shrug &rarr; trap-bar shrug" },
+        { n:"Rope face pull", role:"fixed", sets:2, reps:"15", unit:"kg",
+          cue:"Second appearance this week. Still not optional.",
+          alt:"Band pull-apart" }
+      ]},
+      { name:"Legs", full:"Legs + Core", ex:[
+        { n:"Squat - hack, safety bar or DB box", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"<b>3 s down, 1 s pause at the bottom, drive up.</b> To parallel. <b>RPE 9 ceiling</b> - never failure, no rest-pause, and in the heavy weeks 5-6 reps rather than 3-5.",
+          alt:"Heel-elevated goblet squat" },
+        { n:"DB Romanian deadlift", role:"main", ceil:"RPE 8", unit:"kg",
+          cue:"Straps on, 3 s eccentric, soft knees. <b>RPE 8 ceiling</b> - the rep before failure is where the back rounds.",
+          alt:"45&deg; back extension holding a plate" },
+        { n:"Leg press - constant tension", role:"acc", unit:"kg",
+          cue:"Never lock out; stop the descent before the hips tuck. The safest place in the gym to fail, so fail properly here.",
+          alt:"DB Bulgarian split squat" },
+        { n:"Seated leg curl", role:"acc", unit:"kg",
+          cue:"3 s lowering. Seated beats lying - hip flexion puts the hamstring at a longer length.",
+          alt:"Lying leg curl" },
+        { n:"Leg extension - partial range", role:"acc", unit:"kg",
+          cue:"Start deep (~90&deg;), stop <b>20&deg; short of lockout</b>. If the knee complains, narrow to 90-45&deg; before cutting it.",
+          alt:"Skip rather than substitute" },
+        { n:"Standing calf raise", role:"acc", unit:"kg",
+          cue:"Full stretch at the bottom, 1 s squeeze at the top.",
+          alt:"Seated calf raise &rarr; single-leg DB calf raise" },
+        { n:"Core - continuous, 45 s rest", role:"fixed", sets:4, reps:"see cue", unit:"kg",
+          cue:"Pallof press <b>2 &times; 12</b>/side &middot; cable crunch or hanging knee raise <b>2 &times; 15</b>.",
+          alt:"Both work on a mat with a band" }
+      ]}
+    ],
+    [
+      { name:"Chest + Tri", full:"Chest + Triceps", ex:[
+        { n:"Decline barbell bench press", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"Same anchor, heavier than phase 1. 3 s down, touch, drive. <b>Never past RPE 9.</b>",
+          alt:"Decline DB press &rarr; flat DB press with a slow eccentric" },
+        { n:"Incline dumbbell press - 30&deg;", role:"main", unit:"kg",
+          cue:"Beat your phase 1 loads at the same rep range. Stop at chest level.",
+          alt:"Incline machine press" },
+        { n:"Machine chest press", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. A machine is the right place to push closest to failure.",
+          alt:"Flat DB press" },
+        { n:"Low-to-high cable crossover", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2 - biases the upper chest the flat fly misses. Soft elbows, stop at chest line.",
+          alt:"Pec deck" },
+        { n:"Overhead DB extension - two hands", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Same long-head stretch, different loading curve to the cable.",
+          alt:"Overhead cable extension" },
+        { n:"Single-arm cable pushdown", role:"acc", unit:"kg",
+          cue:"One side at a time evens out any difference that has crept in. Elbow pinned.",
+          alt:"Rope pushdown" },
+        { n:"Rope face pull", role:"fixed", sets:2, reps:"15", unit:"kg",
+          cue:"To the forehead, thumbs back, 1 s pause.",
+          alt:"Band pull-apart" }
+      ]},
+      { name:"Back + Bi", full:"Back + Biceps", ex:[
+        { n:"Weighted neutral-grip pull-up", role:"main", unit:"kg add",
+          cue:"Straps on. More added load than phase 1 at the same reps.",
+          alt:"Heavy neutral-grip lat pulldown" },
+        { n:"Chest-supported row", role:"main", unit:"kg",
+          cue:"Straps on. Chest down on the pad. Beat phase 1.",
+          alt:"Machine row (neutral)" },
+        { n:"Neutral-grip lat pulldown", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2 - vertical pulling where phase 1 had a second horizontal row. Let the shoulder blade rise fully at the top.",
+          alt:"Single-arm cable pulldown, kneeling" },
+        { n:"DB pullover", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Lying across a bench, 3 s into the stretch. Elbow-free lat work.",
+          alt:"Straight-arm cable pulldown" },
+        { n:"Rope cable hammer curl", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Smoother loading through the range than a dumbbell - easier on the medial tendon.",
+          alt:"DB hammer curl" },
+        { n:"Spider curl - neutral DB", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Chest on an incline bench, arms hanging straight down. Neutral grip, never supinated.",
+          alt:"Incline neutral-grip DB curl" }
+      ]},
+      { name:"Delts", full:"Shoulders + Traps", ex:[
+        { n:"Seated neutral-grip DB press", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"<b>RPE 9 ceiling</b>, phase 2 included. Never failure, never rest-pause.",
+          alt:"Half-kneeling landmine press" },
+        { n:"Cable lateral raise - one arm", role:"main", unit:"kg",
+          cue:"Promoted to a main lift for phase 2, so it gets the extra sets. Constant tension through the whole range.",
+          alt:"Machine lateral raise" },
+        { n:"DB lateral raise", role:"acc", unit:"kg",
+          cue:"Now the accessory. Thumbs slightly up, stop level with the shoulder.",
+          alt:"Leaning DB lateral raise" },
+        { n:"Prone rear-delt raise - 30&deg; bench", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Chest on the bench, thumbs up, light and controlled.",
+          alt:"Reverse pec deck" },
+        { n:"DB shrug", role:"acc", unit:"kg",
+          cue:"Straps on. Straight up, 1 s squeeze.",
+          alt:"Machine shrug" },
+        { n:"Rope face pull", role:"fixed", sets:2, reps:"15", unit:"kg",
+          cue:"Second appearance this week.",
+          alt:"Band pull-apart" }
+      ]},
+      { name:"Legs", full:"Legs + Core", ex:[
+        { n:"Squat - hack, safety bar or DB box", role:"main", ceil:"RPE 9", unit:"kg",
+          cue:"<b>3 s down, 1 s pause, drive.</b> To parallel, or slightly below if the knee has stayed silent through phase 1. <b>RPE 9 ceiling.</b>",
+          alt:"Heel-elevated goblet squat" },
+        { n:"DB Romanian deadlift", role:"main", ceil:"RPE 8", unit:"kg",
+          cue:"Straps on, 3 s eccentric. <b>RPE 8 ceiling.</b> Beat phase 1's loads.",
+          alt:"45&deg; back extension holding a plate" },
+        { n:"DB Bulgarian split squat", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Half the dumbbell, twice the effort - and you can step out of a failed rep safely.",
+          alt:"Leg press" },
+        { n:"Lying leg curl", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. 3 s lowering, every rep.",
+          alt:"Seated leg curl" },
+        { n:"Leg extension - partial range", role:"acc", unit:"kg",
+          cue:"Stays both phases - the only exercise that properly trains rectus femoris. Deep start, stop 20&deg; short of lockout.",
+          alt:"Skip rather than substitute" },
+        { n:"Seated calf raise", role:"acc", unit:"kg",
+          cue:"Rotated in for phase 2. Bent knee biases soleus where the standing version hits gastrocnemius.",
+          alt:"Standing calf raise" },
+        { n:"Core - continuous, 45 s rest", role:"fixed", sets:4, reps:"see cue", unit:"kg",
+          cue:"Pallof press <b>2 &times; 12</b>/side &middot; cable crunch or hanging knee raise <b>2 &times; 15</b>.",
+          alt:"Both work on a mat with a band" }
+      ]}
+    ]
+  ]
+};
 
-  { name:"Back + Delts", full:"Back & Shoulders (volume) + Arms", ex:[
-    { n:"Chest-supported or machine row", sets:4, reps:"12-15", tag:"MR", w4:true, unit:"kg",
-      cue:"Second back session of the week - this is the one that makes the block work. Higher reps than Day 1 on purpose: <b>volume, not strength</b>.",
-      alt:"Single-arm DB row &rarr; chest-supported DB row on a 30&deg; bench" },
-    { n:"Wide neutral-grip pulldown", sets:3, reps:"12-15", tag:"LP", w4:true, unit:"kg",
-      cue:"Wider than Day 1 to bias the upper lat. Let the shoulder blade rise fully at the top.",
-      alt:"Lat pulldown with a V-handle" },
-    { n:"DB pullover", sets:2, reps:"15", tag:"LP", unit:"kg",
-      cue:"Lying across a bench, 3 s into the stretch. More elbow-free lat work.",
-      alt:"Straight-arm cable pulldown" },
-    { n:"Cable lateral raise", sets:3, reps:"15-20", tag:"DS", unit:"kg",
-      cue:"Third lateral session of the week. Side delts recover fast and respond to frequency - <b>this is where the width comes from</b>.",
-      alt:"DB lateral raise &rarr; machine lateral raise" },
-    { n:"Reverse pec deck", sets:3, reps:"15-20", tag:"DS", unit:"kg",
-      cue:"Rear delts again. Light, controlled, squeeze and hold.",
-      alt:"Prone rear-delt raise on a 30&deg; bench" },
-    { n:"Hammer curl", sets:3, reps:"12-15", tag:"DS", unit:"kg",
-      cue:"Neutral grip only. Down from 7 sets a week to 3 - <b>if your arm tape drops, say so and they come straight back</b>.",
-      alt:"Rope cable hammer curl" },
-    { n:"Rope pushdown", sets:3, reps:"15-20", tag:"DS", unit:"kg",
-      cue:"Elbows pinned to the ribs. Light and high-rep while the tendons finish healing. No skullcrushers, ever.",
-      alt:"Overhead cable extension" },
-    { n:"Elbow eccentrics - do them here", sets:3, reps:"15 each way", tag:"", unit:"kg",
-      cue:"Wrist extension and flexion, 4 s lowering. Plus the other four days at home. <b>Much better is not fully healed.</b>",
-      alt:"Any light dumbbell, forearm resting on your thigh" }
-  ]}
-];
 /* ===================== end program data ===================== */
 
-const KEY = "hussein_traininglog_v1";
+const KEY  = "hussein_traininglog_v1";
+const PKEY = "hussein_program_v1";
+const AKEY = "hussein_archive_v1";
 const $ = (s,r)=>(r||document).querySelector(s);
 
-let db = load();
+let PROG = loadProgram();
+let db   = load();
 let week = db.ui?.week ?? 0;
 let day  = db.ui?.day  ?? 0;
 let open = 0;
+let lastPhase = -1;
 
+/* ---------- program: built-in, or one pasted in via Load program ---------- */
+function loadProgram(){
+  try{
+    const r = localStorage.getItem(PKEY);
+    if(r){
+      const p = JSON.parse(r);
+      if(validProgram(p)) return p;
+    }
+  }catch(e){}
+  return BUILTIN;
+}
+function validProgram(p){
+  return p && typeof p==="object" && typeof p.id==="string"
+      && Array.isArray(p.labels) && p.labels.length
+      && Array.isArray(p.spec)   && p.spec.length
+      && Array.isArray(p.notes)
+      && Array.isArray(p.phases) && p.phases.length
+      && Array.isArray(p.phases[0]) && p.phases[0].length
+      && Array.isArray(p.phases[0][0].ex);
+}
+function storedArchive(){
+  try{ return JSON.parse(localStorage.getItem(AKEY) || "{}"); }catch(e){ return {}; }
+}
+function archiveCurrent(){
+  try{
+    const a = storedArchive();
+    a[PROG.id] = {
+      label: PROG.summaryTitle || PROG.id.toUpperCase(),
+      days: PROG.phases[0].map(d=>({
+        full: d.full,
+        ex: d.ex.map(e=>plain(e.n))
+      }))
+    };
+    localStorage.setItem(AKEY, JSON.stringify(a));
+  }catch(e){}
+}
+
+function perPhase(){ return Math.ceil(PROG.labels.length / PROG.phases.length); }
+function phaseIdx(w){ return Math.min(PROG.phases.length-1, Math.floor(w / perPhase())); }
+function daysFor(w){ return PROG.phases[phaseIdx(w)]; }
+function specFor(w){ return PROG.spec[Math.min(w, PROG.spec.length-1)]; }
+
+function setsFor(ex, w){
+  if(ex.role === "main") return specFor(w).main;
+  if(ex.role === "acc")  return specFor(w).acc;
+  return ex.sets || 2;
+}
+function repsFor(ex, w){
+  if(ex.reps) return ex.reps;
+  const s = specFor(w);
+  return ex.role === "main" ? s.reps : (s.accReps || s.reps);
+}
+function tagFor(ex, w){
+  if(ex.ceil) return ex.ceil;                       // capped lifts never get a technique
+  const s = specFor(w);
+  if(s.tech === "RP" && ex.role === "main") return "RP";
+  if(s.tech === "DS" && ex.role === "acc")  return "DS";
+  return "";
+}
+
+/* ---------- storage ---------- */
 function load(){
   try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
   return { blocks:{}, ui:{} };
@@ -408,44 +584,43 @@ function save(){
   catch(e){ toast("Couldn't save — storage is full or blocked"); }
 }
 function bucket(w,d){
-  db.blocks[BLOCK_ID] = db.blocks[BLOCK_ID] || {};
-  const b = db.blocks[BLOCK_ID];
+  db.blocks[PROG.id] = db.blocks[PROG.id] || {};
+  const b = db.blocks[PROG.id];
   const k = "w"+w+"d"+d;
   b[k] = b[k] || { sets:{}, notes:"" };
   return b[k];
 }
-function setsFor(ex, w){
-  if(w===0 || w===5) return 2;                 // deload weeks, both ends
-  return ex.sets + (w===4 && ex.w4 ? 1 : 0);
-}
-function tagFor(ex, w){
-  if(w===0 || w===5) return "";                // no techniques on a deload
-  if(w<3) return (ex.tag||"").replace(/·?LP/,"").replace(/^·/,"");
-  return ex.tag||"";
-}
-
 function toast(msg){
   const t=$("#toast"); t.textContent=msg; t.dataset.show="1";
-  clearTimeout(t._t); t._t=setTimeout(()=>t.dataset.show="0",2200);
+  clearTimeout(t._t); t._t=setTimeout(()=>t.dataset.show="0",2400);
 }
 
 /* ---------- header ---------- */
 function renderHeader(){
+  $("#brandtext").innerHTML = PROG.title
+    ? PROG.title.replace(/(\d+)\s*$/, '<span>$1</span>')
+    : "Logger";
+  $("#daylabel").textContent = daysFor(week)[day].full;
+
   const wk=$("#weeks");
-  if(!wk.children.length){
-    for(let w=0;w<WEEK_LABELS.length;w++){
+  if(wk.children.length !== PROG.labels.length){
+    wk.innerHTML="";
+    PROG.labels.forEach((lbl,w)=>{
       const b=document.createElement("button");
-      b.type="button"; b.className="wk"; b.id="wk"+w; b.textContent=WEEK_LABELS[w];
+      b.type="button"; b.className="wk"; b.id="wk"+w; b.textContent=lbl;
       b.addEventListener("click",()=>{week=w;open=0;save();renderAll()});
       wk.appendChild(b);
-    }
+    });
   }
   [...wk.children].forEach((b,i)=>b.setAttribute("aria-pressed", String(i===week)));
-  $("#wknote").textContent = WEEK_NOTES[week];
+  $("#wknote").textContent = PROG.notes[week] || "";
 
-  const dy=$("#days");
-  if(!dy.children.length){
-    DAYS.forEach((d,i)=>{
+  const ph = phaseIdx(week);
+  const dy = $("#days");
+  if(ph !== lastPhase || dy.children.length !== daysFor(week).length){
+    lastPhase = ph;
+    dy.innerHTML="";
+    daysFor(week).forEach((d,i)=>{
       const b=document.createElement("button");
       b.type="button"; b.className="day"; b.id="day"+i;
       b.innerHTML='<b>'+d.name+'</b><span class="bar"><i></i></span>';
@@ -456,15 +631,14 @@ function renderHeader(){
   [...dy.children].forEach((b,i)=>{
     b.setAttribute("aria-pressed", String(i===day));
     const p = progress(week,i);
-    $(".bar i",b).style.width = (p.total? Math.round(p.done/p.total*100):0)+"%";
+    $(".bar i",b).style.width = (p.total ? Math.round(p.done/p.total*100) : 0)+"%";
     b.dataset.complete = (p.total && p.done===p.total) ? "1":"0";
   });
-  $("#daylabel").textContent = DAYS[day].full;
 }
 
 function progress(w,d){
   const b = bucket(w,d); let done=0,total=0;
-  DAYS[d].ex.forEach((ex,ei)=>{
+  daysFor(w)[d].ex.forEach((ex,ei)=>{
     const n=setsFor(ex,w); total+=n;
     for(let s=0;s<n;s++) if(b.sets[ei+"_"+s]?.done) done++;
   });
@@ -475,10 +649,14 @@ function progress(w,d){
 function renderSession(){
   const list=$("#exlist"); list.innerHTML="";
   const b=bucket(week,day);
-  const prevB = week>0 ? bucket(week-1,day) : null;
+  // only compare within the same phase: phase 2 rotates the accessories
+  const samePhase = week>0 && phaseIdx(week-1)===phaseIdx(week);
+  const prevB = samePhase ? bucket(week-1,day) : null;
 
-  DAYS[day].ex.forEach((ex,ei)=>{
-    const n=setsFor(ex,week);
+  daysFor(week)[day].ex.forEach((ex,ei)=>{
+    const n    = setsFor(ex,week);
+    const reps = repsFor(ex,week);
+    const tag  = tagFor(ex,week);
     let doneCount=0; for(let s=0;s<n;s++) if(b.sets[ei+"_"+s]?.done) doneCount++;
 
     const card=document.createElement("section");
@@ -486,15 +664,14 @@ function renderSession(){
     card.dataset.open = (ei===open)?"1":"0";
     card.dataset.complete = (doneCount===n)?"1":"0";
 
-    const tag=tagFor(ex,week);
-    const ceil = /RPE\s*8|RPE\s*9/.test(tag);
+    const ceil = !!ex.ceil;
     const head=document.createElement("button");
     head.type="button"; head.className="exhead";
     head.setAttribute("aria-expanded", String(ei===open));
     head.innerHTML =
       '<span class="idx">'+(doneCount===n?'&#10003;':(ei+1))+'</span>'+
       '<span class="exmeta"><span class="exname">'+ex.n+'</span>'+
-        '<span class="exsub"><span class="presc">'+n+' &times; '+ex.reps+
+        '<span class="exsub"><span class="presc">'+n+' &times; '+reps+
         ' &nbsp;·&nbsp; '+doneCount+'/'+n+' done</span>'+
         (tag?'<span class="badge'+(ceil?' ceil':'')+'">'+tag+'</span>':'')+
       '</span></span>'+
@@ -527,7 +704,7 @@ function renderSession(){
         i1.setAttribute("aria-label","Set "+(s+1)+" load");
         i1.value = rec.kg ?? "";
         i1.placeholder = prev?.kg ? String(prev.kg) : "load";
-        const u1=document.createElement("span"); u1.className="unit"; u1.textContent=ex.unit;
+        const u1=document.createElement("span"); u1.className="unit"; u1.textContent=ex.unit||"kg";
         f1.appendChild(i1); f1.appendChild(u1);
 
         const f2=document.createElement("div"); f2.className="fld";
@@ -547,11 +724,8 @@ function renderSession(){
         tick.innerHTML='<svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>';
 
         const write=()=>{
-          b.sets[k] = {
-            kg:i1.value.trim(),
-            reps:i2.value.trim(),
-            done: tick.getAttribute("aria-pressed")==="true"
-          };
+          b.sets[k] = { kg:i1.value.trim(), reps:i2.value.trim(),
+                        done: tick.getAttribute("aria-pressed")==="true" };
           save();
         };
         i1.addEventListener("input",write);
@@ -561,10 +735,9 @@ function renderSession(){
           tick.setAttribute("aria-pressed",String(now));
           row.dataset.done = now?"1":"0";
           write(); renderHeader();
-          const dc = DAYS[day].ex[ei];
           let c=0; for(let x=0;x<n;x++) if(b.sets[ei+"_"+x]?.done) c++;
           card.dataset.complete = (c===n)?"1":"0";
-          $(".presc",head).innerHTML = n+' &times; '+dc.reps+' &nbsp;·&nbsp; '+c+'/'+n+' done';
+          $(".presc",head).innerHTML = n+' &times; '+reps+' &nbsp;·&nbsp; '+c+'/'+n+' done';
           $(".idx",head).innerHTML = (c===n)?'&#10003;':(ei+1);
         });
 
@@ -573,7 +746,7 @@ function renderSession(){
 
         if(prev?.kg || prev?.reps){
           const p=document.createElement("div"); p.className="prev";
-          p.textContent = (week===1 ? "Deload" : "Week "+(week-1)) + ": " + (prev.kg||"—") + " × " + (prev.reps||"—");
+          p.textContent = PROG.labels[week-1] + ": " + (prev.kg||"—") + " × " + (prev.reps||"—");
           sets.appendChild(p);
         }
       }
@@ -590,7 +763,7 @@ function renderSession(){
 
 function renderAll(){ renderHeader(); renderSession(); }
 
-/* ---------- backup: clipboard-based, works on phone and offline ---------- */
+/* ---------- sheet: backup, restore, load program ---------- */
 const sheet=$("#sheet"), sheetText=$("#sheettext"), sheetMsg=$("#sheetmsg"),
       sheetTitle=$("#sheettitle"), sheetOk=$("#sheetok");
 let sheetMode="export";
@@ -599,67 +772,79 @@ function openSheet(mode){
   sheetMode=mode;
   if(mode==="export"){
     sheetTitle.textContent="Back up your log";
-    sheetMsg.textContent="Copy this and paste it somewhere safe — a note, an email to yourself. It restores everything.";
+    sheetMsg.textContent="Copy this and paste it somewhere safe. It restores everything.";
     sheetText.value=JSON.stringify(db);
     sheetOk.textContent="Copy";
-  }else{
+  }else if(mode==="import"){
     sheetTitle.textContent="Restore a backup";
     sheetMsg.textContent="Paste a backup here. This replaces everything currently logged.";
     sheetText.value="";
     sheetOk.textContent="Restore";
+  }else{
+    sheetTitle.textContent="Load a new program";
+    sheetMsg.textContent="Paste the program text. Your logged sets are kept and the old program is archived, so Copy summary still prints its history.";
+    sheetText.value="";
+    sheetOk.textContent="Load";
   }
   sheet.dataset.show="1";
   setTimeout(()=>{ sheetText.focus(); if(mode==="export") sheetText.select(); },40);
 }
 function closeSheet(){ sheet.dataset.show="0"; }
 
-$("#btnexport").addEventListener("click",async()=>{
-  const payload=JSON.stringify(db);
-  try{
-    await navigator.clipboard.writeText(payload);
-    toast("Log copied — paste it somewhere safe");
-  }catch(e){ openSheet("export"); }
+$("#btnexport").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText(JSON.stringify(db)); toast("Log copied — paste it somewhere safe"); }
+  catch(e){ openSheet("export"); }
 });
-$("#btnimport").addEventListener("click",()=>openSheet("import"));
-$("#sheetcancel").addEventListener("click",closeSheet);
-sheet.addEventListener("click",e=>{ if(e.target===sheet) closeSheet(); });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape" && sheet.dataset.show==="1") closeSheet(); });
+$("#btnimport").addEventListener("click", ()=>openSheet("import"));
+$("#btnprogram").addEventListener("click", ()=>openSheet("program"));
+$("#sheetcancel").addEventListener("click", closeSheet);
+sheet.addEventListener("click", e=>{ if(e.target===sheet) closeSheet(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && sheet.dataset.show==="1") closeSheet(); });
 
-sheetOk.addEventListener("click",async()=>{
+sheetOk.addEventListener("click", async ()=>{
   if(sheetMode==="export"){
     sheetText.select();
     try{ await navigator.clipboard.writeText(sheetText.value); toast("Copied"); }
     catch(e){ toast("Select the text and copy it manually"); }
     return;
   }
+
   let d;
   try{ d=JSON.parse(sheetText.value.trim()); }
-  catch(e){ toast("That isn't valid backup data"); return; }
-  if(!d || typeof d!=="object" || !d.blocks){ toast("That isn't a training backup"); return; }
-  db=d; week=db.ui?.week??0; day=db.ui?.day??0; open=0;
-  save(); renderAll(); closeSheet(); toast("Backup restored");
+  catch(e){ toast("That isn't valid data"); return; }
+
+  if(sheetMode==="import"){
+    if(!d || typeof d!=="object" || !d.blocks){ toast("That isn't a training backup"); return; }
+    db=d; week=db.ui?.week??0; day=db.ui?.day??0; open=0;
+    save(); renderAll(); closeSheet(); toast("Backup restored");
+    return;
+  }
+
+  // load program
+  if(!validProgram(d)){ toast("That isn't a program file"); return; }
+  if(d.id === PROG.id && !confirm("That program has the same id as the current one, so it will reuse the same log. Continue?")) return;
+  if(d.id !== PROG.id) archiveCurrent();
+  try{ localStorage.setItem(PKEY, JSON.stringify(d)); }
+  catch(e){ toast("Couldn't save the program — storage is full"); return; }
+  PROG = d; week = 0; day = 0; open = 0; lastPhase = -1;
+  save(); renderAll(); closeSheet();
+  toast("Loaded " + (d.title || d.id));
 });
 
 $("#btnclear").addEventListener("click",()=>{
   const b=bucket(week,day);
   if(!Object.keys(b.sets).length && !b.notes){ toast("Nothing logged here yet"); return; }
-  if(!confirm("Clear all sets and notes for "+WEEK_LABELS[week]+", "+DAYS[day].full+"?")) return;
+  if(!confirm("Clear all sets and notes for "+PROG.labels[week]+", "+daysFor(week)[day].full+"?")) return;
   b.sets={}; b.notes=""; save(); renderAll(); toast("Session cleared");
 });
 
-/* ---------- readable summary, for review ---------- */
-function weekHeading(w){
-  if(w===0) return "=== DELOAD WEEK ===";
-  if(w===5) return "=== WEEK 5 (deload & test) ===";
-  return "=== WEEK " + w + " ===";
-}
-
+/* ---------- readable summary ---------- */
 function summariseCurrent(){
-  const b = db.blocks[BLOCK_ID] || {};
+  const b = db.blocks[PROG.id] || {};
   const out = [];
-  for(let w=0; w<WEEK_LABELS.length; w++){
+  for(let w=0; w<PROG.labels.length; w++){
     const wk = [];
-    DAYS.forEach((d,di)=>{
+    daysFor(w).forEach((d,di)=>{
       const rec = b["w"+w+"d"+di];
       if(!rec) return;
       const body = [];
@@ -674,7 +859,8 @@ function summariseCurrent(){
         }
         if(parts.length){
           const tag = tagFor(ex,w);
-          body.push("  " + (ei+1) + ". " + ex.n.replace(/<[^>]+>/g,"") + "  (" + n + " x " + ex.reps + (tag ? ", " + tag : "") + ")");
+          body.push("  " + (ei+1) + ". " + plain(ex.n) +
+                    "  (" + n + " x " + repsFor(ex,w) + (tag ? ", " + tag : "") + ")");
           body.push("     " + parts.join("  |  "));
         }
       });
@@ -686,23 +872,25 @@ function summariseCurrent(){
         if(note) wk.push("     Notes: " + note);
       }
     });
-    if(wk.length){ out.push(""); out.push(weekHeading(w)); out.push.apply(out, wk); }
+    if(wk.length){
+      out.push("");
+      out.push("=== " + PROG.labels[w] + " (phase " + (phaseIdx(w)+1) + ") ===");
+      out.push.apply(out, wk);
+    }
   }
   if(!out.length) return null;
-  return ["BLOCK 3 - BACK & SHOULDER SPECIALISATION",
+  return [(PROG.summaryTitle || PROG.id.toUpperCase()),
           "Exported " + new Date().toISOString().slice(0,10),
           "Format: load x reps, in set order"].concat(out).join("\n");
 }
 
-/* Older blocks: rendered from stored set keys plus archived exercise names,
-   so nothing you logged in a previous block becomes unreadable. */
 function summariseArchive(key, meta){
   const store = db.blocks[key];
   if(!store) return null;
   const out = [];
-  for(let w=0; w<=5; w++){
+  for(let w=0; w<=11; w++){
     const wk = [];
-    meta.days.forEach((d,di)=>{
+    (meta.days||[]).forEach((d,di)=>{
       const rec = store["w"+w+"d"+di];
       if(!rec) return;
       const byEx = {};
@@ -715,7 +903,7 @@ function summariseArchive(key, meta){
       const body = [];
       Object.keys(byEx).map(Number).sort((a,b)=>a-b).forEach(ei=>{
         byEx[ei].sort((a,b)=>a[0]-b[0]);
-        body.push("  " + (ei+1) + ". " + (d.ex[ei] || ("Exercise " + (ei+1))));
+        body.push("  " + (ei+1) + ". " + ((d.ex||[])[ei] || ("Exercise " + (ei+1))));
         body.push("     " + byEx[ei].map(x=>x[1]).join("  |  "));
       });
       const note = (rec.notes||"").trim();
@@ -726,16 +914,24 @@ function summariseArchive(key, meta){
         if(note) wk.push("     Notes: " + note);
       }
     });
-    if(wk.length){ out.push(""); out.push(weekHeading(w)); out.push.apply(out, wk); }
+    if(wk.length){ out.push(""); out.push("=== WEEK " + w + " ==="); out.push.apply(out, wk); }
   }
   if(!out.length) return null;
   return [meta.label + " (archived)"].concat(out).join("\n");
 }
 
+function plain(s){
+  const d=document.createElement("div");
+  d.innerHTML = String(s).replace(/<[^>]+>/g,"");
+  return (d.textContent||"").trim();
+}
+
 function buildSummary(){
+  const all = Object.assign({}, ARCHIVE, storedArchive());
+  delete all[PROG.id];
   const parts = [];
-  Object.keys(ARCHIVE).forEach(k=>{
-    const t = summariseArchive(k, ARCHIVE[k]);
+  Object.keys(all).forEach(k=>{
+    const t = summariseArchive(k, all[k]);
     if(t) parts.push(t);
   });
   const cur = summariseCurrent();
@@ -767,11 +963,9 @@ $("#btnsummary").addEventListener("click", async ()=>{
     '<rect width="512" height="512" rx="104" fill="#14181e"/>'+
     '<g stroke="#e0912f" stroke-width="34" stroke-linecap="round" fill="none">'+
     '<path d="M104 196v120M160 160v192M352 160v192M408 196v120M160 256h192"/></g></svg>');
-  const mf = {
-    name:"Block 3 Logger", short_name:"Block 3", start_url:".",
+  const mf = { name:"Training Logger", short_name:"Logger", start_url:".",
     display:"standalone", background_color:"#14181e", theme_color:"#14181e",
-    icons:[{src:icon, sizes:"512x512", type:"image/svg+xml", purpose:"any"}]
-  };
+    icons:[{src:icon, sizes:"512x512", type:"image/svg+xml", purpose:"any"}] };
   const add=(rel,href,extra)=>{ const l=document.createElement("link"); l.rel=rel; l.href=href;
     if(extra) Object.assign(l,extra); document.head.appendChild(l); };
   try{
